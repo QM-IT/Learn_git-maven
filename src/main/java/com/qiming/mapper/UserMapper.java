@@ -10,10 +10,14 @@ import java.util.Map;
 public interface UserMapper {
 
     /**
-     * CRUD
+     * CRUD, IDEA提示错误
      */
     User select(int id);
 
+    /**
+     * IDEA提示错误
+     * @return
+     */
     List<User> selectAll();
 
     void updateUser();
@@ -24,7 +28,7 @@ public interface UserMapper {
     int insertUser(User user);
 
     /**
-     * ParamMapping
+     * ParamMapping, IDEA提示错误
      */
     Map<String, Object> getUserToMap(@Param("id") int ID);
     @MapKey("id")
