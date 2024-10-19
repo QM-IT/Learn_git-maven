@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_MBG/src/main/resources/com/atguigu/mybatis/mapper/EmpMapper.xml" dialect="MySQL" />
+    <file url="file://D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_demo2/src/main/resources/com/atguigu/mybatis/mapper/ParameterMapper.xml" dialect="MySQL" />
+    <file url="file://D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_demo4/src/main/resources/com/atguigu/mybatis/mapper/DeptMapper.xml" dialect="MySQL" />
+    <file url="file://D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_demo4/src/main/resources/com/atguigu/mybatis/mapper/DynamicSQLMapper.xml" dialect="MySQL" />
+  </component>
+</project>

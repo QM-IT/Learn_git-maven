@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CodeInsightWorkspaceSettings">
+    <option name="optimizeImportsOnTheFly" value="true" />
+  </component>
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="GoogleJavaFormatSettings">
+    <option name="enabled" value="true" />
+  </component>
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_demo1/pom.xml" />
+        <option value="D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_demo2/pom.xml" />
+        <option value="D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_demo3/pom.xml" />
+        <option value="D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_demo4/pom.xml" />
+        <option value="D:/BaiduNetDisk/尚硅谷2022版MyBatis教程/代码/代码/MyBatis_MBG/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" project-jdk-name="17" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>
