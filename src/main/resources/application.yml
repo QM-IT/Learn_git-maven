@@ -1,0 +1,21 @@
+# DataSource Config
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    dynamic:
+      primary: db01 #设置默认的数据源或者数据源组,默认值即为master
+      strict: false #严格匹配数据源,默认false. true未匹配到指定数据源时抛异常,false使用默认数据源
+      grace-destroy: false #是否优雅关闭数据源，默认为false，设置为true时，关闭数据源时如果数据源中还存在活跃连接，至多等待10s后强制关闭
+      datasource:
+        db01:
+          url: jdbc:mysql://192.168.100.101:3306/db01
+          username: qm
+          password: wangqiming
+        powerjob_product:
+          url: jdbc:mysql://192.168.100.101:3306/powerjob_product
+          username: qm
+          password: wangqiming
+
+
+mybatis-plus:
+  type-aliases-package: com.qiming.pojo

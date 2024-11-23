@@ -1,47 +1,5 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.qiming.mapper.UserMapper">
-    <select id="select" resultType="User">
-        select * from user where id = #{id}
-    </select>
-    <select id="selectAll" resultType="User">
-        select * from user
-    </select>
-    <select id="getUserToMap" resultType="java.util.Map">
-        select * from user where id = #{id}
-    </select>
-    <select id="getUserAllToMap" resultType="java.util.Map">
-        select * from user
-    </select>
-    <select id="selectWithMohu" resultType="com.qiming.pojo.User">
-        <!--select * from t_user where username like '%${mohu}%'-->
-        <!--select * from t_user where username like concat('%',#{mohu},'%')-->
-        select * from user where name like "%"#{for_name}"%"
-    </select>
 
-
-    <!--int insertUser();-->
-    <insert id="insert">
-        insert into user values(null,'琼恩',44,1,'13018003971')
-    </insert>
-    <insert id="insertUser" useGeneratedKeys="true" keyProperty="id">
-        insert into user values(null,#{name},#{age},#{gender},#{phone})
-    </insert>
-
-
-    <!--int updateUser();-->
-    <update id="updateUser">
-        update user set name='斗罗大陆',gender=1 where id = 6
-    </update>
-
-
-    <!--int deleteUser();-->
-    <delete id="deleteUser">
-        delete from user where id = 7
-    </delete>
-    <delete id="deleteBatch">
-        delete from user where id in (${ids})
-    </delete>
 </mapper>

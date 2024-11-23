@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration xmlns="http://logging.apache.org/log4j/2.0/config">
+
+    <Appenders>
+        <Console name="stdout" target="SYSTEM_OUT">
+            <PatternLayout pattern="%5level [%t] - %msg%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!-- 记录 org.mybatis.example.BlogMapper 的详细执行操作 -->
+        <Logger name="com.qiming.mapper.UserMapper" level="trace"/>
+        <!-- 将日志的记录方式从接口级别切换到语句级别 -->
+        <Logger name="com.qiming.mapper.UserMapper.updateUser" level="info"/>
+        <!-- 对一组映射器接口记录日志，只要对映射器接口所在的包开启日志功能即可 -->
+        <Logger name="com.qiming.mapper" level="debug"/>
+        <!-- 默认全局的日志级别 -->
+        <Root level="error" >
+            <AppenderRef ref="stdout"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

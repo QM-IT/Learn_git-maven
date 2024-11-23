@@ -1,50 +1,16 @@
 package com.qiming.mapper;
 
-import com.qiming.pojo.User;
-import org.apache.ibatis.annotations.MapKey;
-import org.apache.ibatis.annotations.Param;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.qiming.pojo.entity.User;
 
-import java.util.List;
-import java.util.Map;
+/**
+ * <p>
+ *  Mapper 接口
+ * </p>
+ *
+ * @author QM
+ * @since 2024-11-19
+ */
+public interface UserMapper extends BaseMapper<User> {
 
-public interface UserMapper {
-
-    /**
-     * CRUD, IDEA提示错误
-     */
-    User select(int id);
-
-    /**
-     * IDEA提示错误
-     * @return
-     */
-    List<User> selectAll();
-
-    void updateUser();
-
-    void deleteUser();
-
-    void insert();
-    int insertUser(User user);
-
-    /**
-     * ParamMapping, IDEA提示错误
-     */
-    Map<String, Object> getUserToMap(@Param("id") int ID);
-    @MapKey("id")
-    Map<String, Object> getUserAllToMap();
-
-    /**
-     * 测试模糊查询
-     * @param mohu
-     * @return
-     */
-    List<User> selectWithMohu(@Param("for_name") String mohu);
-
-    /**
-     * 批量删除
-     * @param ids
-     * @return
-     */
-    int deleteBatch(@Param("ids") String ids);
 }
