@@ -97,10 +97,10 @@
     </dependencies>
 
     <build>
-        <filters>
-            <!-- 过滤指定properties文件（K=V形式）的文件夹，读取为Map形式 -->
-            <filter>src/main/resources/propertyConfig/common.properties</filter>
-        </filters>
+<!--        <filters>-->
+<!--            &lt;!&ndash; 过滤指定properties文件（K=V形式）的文件夹，读取为Map形式 &ndash;&gt;-->
+<!--            <filter>src/main/resources/propertyConfig/common.properties</filter>-->
+<!--        </filters>-->
         <resources>
             <!-- 资源标识，可以使用${上面定义的k或Maven内部已经存在的}的占位符来表示特定值 -->
             <resource>
