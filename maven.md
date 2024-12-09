@@ -485,7 +485,7 @@ Files
 
 #### Multiple conditions
 
-不同的隐式激活类型可以组合在一个配置文件中。只有满足所有条件时，配置文件才会激活（自Maven3.2.2， [MNG-4565](https://issues.apache.org/jira/browse/MNG-4565)起）。不支持在同一配置文件中多次使用相同类型（[MNG-5909](https://issues.apache.org/jira/browse/MNG-5909), [MNG-3328](https://issues.apache.org/jira/browse/MNG-3328)）。
+不同的隐式激活类型可以组合在一个profile中。只有满足所有条件时，profile才会激活（自Maven3.2.2， [MNG-4565](https://issues.apache.org/jira/browse/MNG-4565)起）。不支持在同一profile中多次使用相同类型（[MNG-5909](https://issues.apache.org/jira/browse/MNG-5909), [MNG-3328](https://issues.apache.org/jira/browse/MNG-3328)）。
 
 
 
@@ -566,7 +566,7 @@ POM中指定的配置文件可以修改以下[POM元素](https://maven.apache.or
 
 ### Profile Order
 
-来自激活的profile中的所有配置元素都会覆盖具有相同POM名称的全局元素，或者在集合的情况下扩展这些元素。如果同一POM或外部文件中有多个配置文件处于活动状态，则后定义的配置文件优先于前面定义的配置文件（与其配置文件ID和激活顺序无关）。
+来自激活的profile中的所有配置元素都会覆盖具有相同POM名称的全局元素，或者在集合的情况下扩展这些元素。如果同一POM或外部文件中有多个profile处于活动状态，则后定义的配置文件优先于前面定义的配置文件（与其配置文件ID和激活顺序无关）。
 
 Example:
 
@@ -614,7 +614,7 @@ Example:
 </project>
 ```
 
-这将导致存储库优先级列表：profile e-2-repo（第一优先）， profile e-1-repo，global-repo。
+这将导致存储库优先级列表：profile e-2-repo（第一优先）， profile e-1-repo，global-repo。另外，setting.xml的profile优先级高于一个工程的pom.xml的profile。
 
 
 
@@ -730,3 +730,216 @@ Example:
 因为，未替换为真实的`${appserver.home}`引用占位符将不是部署和测试您的Web应用程序的有效路径。在编写我们的配置文件时，我们还没有考虑正式生产环境的情况。“生产”环境（env=product）与“test”甚至可能是“local”一起构成了一组自然的目标环境，其实我们可能s是想为其构建集成-测试生命周期阶段。这个自然集的不完整规范意味着我们已经有效地将我们的有效目标环境限制在开发环境中。你的团队成员可能会很麻烦。当构建配置文件来处理此类情况时，请务必解决整个目标集合。
 
 顺便说一句，用户特定的配置文件可以以类似的方式运行。这意味着当团队添加新的开发人员时，用于处理与用户相关的不同环境的配置文件可以运行。虽然我认为这对新手来说是有用的培训，但以这种方式把它们扔新团队成员。同样，一定要考虑完整的profiles。
+
+
+
+### How to activate the specific profile
+
+参考：[introduction-to-profiles#How can I tell which profiles are in effect during a build?](https://maven.apache.org/guides/introduction/introduction-to-profiles.html)
+
+
+
+## Standard Directory Layout
+
+拥有通用目录布局可以让熟悉一个Maven项目的用户立即熟悉另一个Maven项目结构。尽量符合这种结构。但是，如果不能，可以通过项目描述符覆盖这些设置。
+
+| 目录                 | 说明                                                         |
+| -------------------- | ------------------------------------------------------------ |
+| `src/main/java`      | Application/Library sources                                  |
+| `src/main/resources` | Application/Library resources                                |
+| `src/main/filters`   | Resource filter files                                        |
+| `src/main/webapp`    | Web application sources                                      |
+| `src/test/java`      | Test sources                                                 |
+| `src/test/resources` | Test resources                                               |
+| `src/test/filters`   | Test resource filter files                                   |
+| `src/it`             | Integration Tests (primarily for plugins)                    |
+| `src/assembly`       | Assembly descriptors                                         |
+| `src/site`           | Site                                                         |
+| `LICENSE.txt`        | Project's license                                            |
+| `NOTICE.txt`         | Notices and attributions required by libraries that the project depends on |
+| `README.txt`         | Project's readme                                             |
+
+
+
+## Settings Reference
+
+### Quick Overview
+
+settings.xml文件中的settings元素包含用于定义以各种方式配置Maven执行时用到的元素，和pom.xml作用类似，但是所配置的属性不可以和任何特定项目或发布给用户的产品相绑定。这些值包括本地存储库位置、备用远程存储库服务器和Authentication信息。
+
+setting.xml可以存在于两个地方：
+
+- The Maven install: `${maven.home}/conf/settings.xml`
+- A user's install: `${user.home}/.m2/settings.xml`
+
+前一个setting.xml也称为全局设置，后一个settings.xml称为用户设置。如果两个文件都存在，它们的内容将被合并，用户特定的settings.xml具有更高优先级。
+
+tips：如果需要从头开始创建用户特定的设置，最简单的方法是将Maven安装中的全局设置复制到${user. home}/.m2目录。Maven的默认setting.xml是一个带有注释和示例的模板，因此您可以快速调整它以满足您的需求。
+
+以下是设置下settings顶部元素的概述：
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <localRepository/>
+  <interactiveMode/>
+  <offline/>
+  <pluginGroups/>
+  <servers/>
+  <mirrors/>
+  <proxies/>
+  <profiles/>
+  <activeProfiles/>
+</settings>
+```
+
+xml的内容可以使用以下表达式进行插值：
+
+1. `${user.home}` and all other system properties
+2. `${env.HOME}` etc. for environment variable
+
+请注意，settings.xml中配置文件中定义的属性不能用于插值。
+
+
+
+### Simple Values
+
+有一半的顶级settings元素是简单值，表示一系列值，这些值描述了构建系统中绝大部分处于活动状态的元素。
+
+```xml
+settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <localRepository>${user.home}/.m2/repository</localRepository>
+  <interactiveMode>true</interactiveMode>
+  <offline>false</offline>
+  ...
+</settings>
+```
+
+- **localRepository**: This value is the path of this build system's local repository. The default value is `${user.home}/.m2/repository`. This element is especially useful for a main build server allowing all logged-in users to build from a common local repository.
+- **interactiveMode**: `true` if Maven should attempt to interact with the user for input, `false` if not. Defaults to `true`.
+- **offline**: `true` if this build system should operate in offline mode, defaults to `false`. This element is useful for build servers which cannot connect to a remote repository, either because of network setup or security reasons.
+
+
+
+### Plugin Groups
+
+此元素包含`pluginGroup`元素列表，每个元素都包含一个`groupId`。使用某个插件时，命令行中未提供groupId，会自动搜索该列表，并且。此列表自动包含`org. apache.maven.plugins`和`org.codehaus.mojo`。
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  ...
+  <pluginGroups>
+    <pluginGroup>org.eclipse.jetty</pluginGroup>
+  </pluginGroups>
+  ...
+</settings>
+```
+
+例如，给定上述设置，Maven命令行可以执行`org. eclipse.jetty：jetty-maven-plugin：run`并使用截断命令：
+
+```bash
+mvn jetty:run
+```
+
+
+
+### Servers
+
+下载和部署的存储库由POM的[`repositories`](https://maven.apache.org/pom.html#Repositories) 和[`distributionManagement`](https://maven.apache.org/pom.html#Distribution_Management) 元素定义。但是，某些设置（如用户名和密码）不应该与pom. xml一起分发。这种类型的信息应该存在于构建服务器的设置.xml中。
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  ...
+  <servers>
+    <server>
+      <id>server001</id>
+      <username>my_login</username>
+      <password>my_password</password>
+      <privateKey>${user.home}/.ssh/id_dsa</privateKey>
+      <passphrase>some_passphrase</passphrase>
+      <filePermissions>664</filePermissions>
+      <directoryPermissions>775</directoryPermissions>
+      <configuration></configuration>
+    </server>
+  </servers>
+  ...
+</settings>
+```
+
+- **id**: This is the ID of the server *(not of the user to login as)* that matches the `id` element of the repository/mirror that Maven tries to connect to.
+- **username**, **password**: These elements appear as a pair denoting the login and password required to authenticate to this server.
+- **privateKey**, **passphrase**: Like the previous two elements, this pair specifies a path to a private key (default is `${user.home}/.ssh/id_dsa`) and a `passphrase`, if required. The `passphrase` and `password` elements may be externalized in the future, but for now they must be set plain-text in the `settings.xml` file.
+- **filePermissions**, **directoryPermissions**: When a repository file or directory is created on deployment, these are the permissions to use. The legal values of each is a three digit number corresponding to *nix file permissions, e.g. 664, or 775.
+
+注意：如果您使用私钥登录服务器，请确保省略`<password>`元素。否则，该密钥将被忽略。
+
+**Password Encryption**
+
+A new feature - server password and passphrase encryption has been added to 2.1.0+. See details [on this page](https://maven.apache.org/guides/mini/guide-encryption.html)
+
+
+
+### Mirrors
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  ...
+  <mirrors>
+    <mirror>
+      <id>planetmirror.com</id>
+      <name>PlanetMirror Australia</name>
+      <url>http://downloads.planetmirror.com/pub/maven2</url>
+      <mirrorOf>central</mirrorOf>
+    </mirror>
+  </mirrors>
+  ...
+</settings>
+```
+
+- **id**, **name**: The unique identifier and user-friendly name of this mirror. The `id` is used to differentiate between `mirror` elements and to pick the corresponding credentials from the [``](https://maven.apache.org/settings.html#Servers) section when connecting to the mirror.
+- **url**: The base URL of this mirror. The build system will use this URL to connect to a repository rather than the original repository URL.
+- **mirrorOf**: The `id` of the repository that this is a mirror of. For example, to point to a mirror of the Maven `central` repository (`https://repo.maven.apache.org/maven2/`), set this element to `central`. More advanced mappings like `repo1,repo2` or `*,!inhouse` are also possible. This must not match the mirror `id`.
+
+有关镜像的更深入介绍，请阅读 [Guide to Mirror Settings](https://maven.apache.org/guides/mini/guide-mirror-settings.html)。
+
+
+
+### Proxies
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  ...
+  <proxies>
+    <proxy>
+      <id>myproxy</id>
+      <active>true</active>
+      <protocol>http</protocol>
+      <host>proxy.somewhere.com</host>
+      <port>8080</port>
+      <username>proxyuser</username>
+      <password>somepassword</password>
+      <nonProxyHosts>*.google.com|ibiblio.org</nonProxyHosts>
+    </proxy>
+  </proxies>
+  ...
+</settings>
+```
+
+- **id**: The unique identifier for this proxy. This is used to differentiate between `proxy` elements.
+- **active**: `true` if this proxy is active. This is useful for declaring a set of proxies, but only one may be active at a time.
+- **protocol**, **host**, **port**: The `protocol://host:port` of the proxy, separated into discrete elements.
+- **username**, **password**: These elements appear as a pair denoting the login and password required to authenticate to this proxy server.
+- **nonProxyHosts**: This is a list of hosts which should not be proxied. The delimiter of the list is the expected type of the proxy server; the example above is pipe delimited - comma delimited is also common.
+
+
+
+### Profiles
+
+
+
+### Active Profiles
