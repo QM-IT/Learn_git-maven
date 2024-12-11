@@ -761,6 +761,220 @@ Example:
 
 
 
+## Dependency Mechanism
+
+依赖管理是Maven的核心特性。管理单个项目的依赖很容易。也可以管理由数百个模块组成的多模块项目和应用程序的依赖。Maven在定义、创建和维护具有明确定义的类路径和库版本的可重现构建方面提供了很大帮助。
+
+### Transitive Dependencies
+
+Maven通过自动包含依赖传递特性来避免发现和指定您自己的依赖项所需的库。
+
+通过从指定的远程存储库读取依赖项的项目文件来促进此功能。通常，这些项目的所有依赖项都在您的项目中使用，项目从其父级继承的任何依赖项也是如此，或者从它的依赖项，等等。
+
+可以收集依赖项的级别数量没有限制。只有在发现循环依赖时才会出现问题。
+
+使用依赖传递特性，包含库的视图可以很快变得非常大。出于这个原因，还有一些额外的功能可以限制包含哪些依赖项：
+
+- *Dependency mediation*——这决定了当遇到多个版本作为依赖项时，将选择哪个版本的工件。Maven选择“最近的定义”。也就是说，它使用依赖树中最接近您的项目的依赖项的版本。您始终可以通过在项目的POM中显式声明来选择版本。请注意，如果两个依赖项版本在依赖树中处于相同的深度，则第一个声明优先。
+
+- “最近的定义”意味着使用的版本将是依赖树中最接近您的项目的版本。考虑这棵依赖树：
+
+  ```
+    A
+    ├── B
+    │   └── C
+    │       └── D 2.0
+    └── E
+        └── D 1.0
+  ```
+
+- 在文本中，A、B和C的依赖项定义为A->B->C->D 2.0和A->E->D 1.0，然后在构建A时将使用D 1.0，因为从A到D到E的路径更短。您可以在A中显式地向D 2.0添加依赖项以强制使用D 2.0，如下所示：
+
+  ```
+    A
+    ├── B
+    │   └── C
+    │       └── D 2.0
+    ├── E
+    │   └── D 1.0
+    │
+    └── D 2.0      
+  ```
+
+- *Dependency management* -这允许项目作者直接指定在传递依赖项中或在未指定版本的依赖项中遇到工件时要使用的工件版本。在上一节的示例中，即使A没有直接使用依赖项，也直接将依赖项添加到A中。相反，A可以将D作为依赖项包含在其dependencyManagement部分中，并直接控制何时或是否引用它时使用哪个版本的D。
+- *Dependency scope*-这允许您仅包含适合构建当前阶段的依赖项。这将在下面更详细地描述。
+- *Excluded dependencies*-如果项目X依赖于项目Y，而项目Y依赖于项目Z，则项目X的所有者可以使用“排除”元素显式排除项目Z作为依赖项。
+- *Optional dependencies*-如果项目Y依赖于项目Z，项目Y的所有者可以使用“可选”元素将项目Z标记为可选依赖项。当项目X依赖于项目Y时，X将仅依赖于Y，而不依赖于Y的可选依赖项Z。然后，项目X的所有者可以根据自己的选择显式添加对Z的依赖项。（可选依赖项可视为“默认排除”。）
+
+尽管传递依赖可以隐含地包含所需的依赖，但明确指定源代码直接使用的依赖是一个很好的做法。这种最佳实践证明了它的价值，尤其是当项目的依赖改变它们的依赖时。例如，假设您的项目A指定了对另一个项目B的依赖，而项目B指定了对项目C的依赖。如果您直接使用项目C中的组件，并且您没有在项目A中指定项目C，则当项目B突然更新/删除其对项目C的依赖时，可能会导致构建失败。
+
+直接指定依赖项的另一个原因是它为您的项目提供了更好的文档说明：只需阅读项目中的POM文件或执行`mvn dependency:tree`即可了解更多信息。Maven还提供了用于分析依赖关系的 [dependency:analyze](https://maven.apache.org/plugins/maven-dependency-plugin/analyze-mojo.html)插件目标：它有助于使这种最佳实践更容易实现。
+
+
+
+### Dependency Management
+
+maven的核心功能，请通过案例说明来理解，参考：[introduction-to-dependency-mechanism.html](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html)。
+
+
+
+#### Optional
+
+不会出于（无论出于什么原因）将项目拆分为子模块的目的，而使用`Optional`。一般是，一些依赖项仅用于项目中的某些功能，如果不使用该功能，就不需要了。理想情况下，这样的功能将被拆分为依赖于核心功能项目的子模块。如果需要它们时，子项目将只有非可选依赖项，因为如要使用到子项目的功能。但是，由于项目不能被拆分（同样，无论出于什么原因），这些依赖项被声明为`Optional`。如果用户想要使用与可选依赖项相关的功能，他们必须在自己的项目中重新声明该可选依赖项。这不是处理这种情况的最明确的方法，但是可选依赖项和依赖项排除都是权宜之计。
+
+可选依赖项可以节省空间和内存。它们防止违反许可协议的或导致类路径问题的jar被捆绑到`war、ear、fat jar`等类型的包中。
+
+通过在其依赖声明中将`<optional>`元素设置为true，依赖项被声明为可选：
+
+```xml
+<project>
+  ...
+  <dependencies>
+    <!-- declare the dependency to be set as optional -->
+    <dependency>
+      <groupId>sample.ProjectA</groupId>
+      <artifactId>Project-A</artifactId>
+      <version>1.0</version>
+      <scope>compile</scope>
+      <optional>true</optional> <!-- value will be true or false only -->
+    </dependency>
+  </dependencies>
+</project>
+```
+
+**作用**
+
+```
+Project-A -> Project-B
+-------------------------------
+Project-X -> Project-A
+```
+
+上图表示Project-A依赖于Project-B。当A在其POM中将B声明为可选依赖项时，这种关系保持不变。这就像一个普通的构建，其中Project-B将被添加到Project-A的类路径中。
+
+当另一个项目（Project-X）在其POM中声明Project-A为依赖项时，依赖项的`Optional`特性生效。Project-B不包含在Project-X的类路径中。您需要直接在Project X的POM中声明它，以便B包含在X的类路径中。
+
+
+
+#### Exclusion
+
+由于Maven以传递方式解析依赖项，因此不需要的依赖项可能会包含在项目的类路径中。例如，某个较旧的jar可能存在安全问题或与您正在使用的Java版本不兼容。为了解决这个问题，Maven允许您排除特定的依赖项。`Exclusion`设置在POM中的特定依赖项上，并指定特定的groupId和artifactId。当您构建项目时，该工件（通过声明`Exclusion`的依赖项）不会添加到项目的类路径中。
+
+```xml
+<project>
+  ...
+  <dependencies>
+    <dependency>
+      <groupId>sample.ProjectA</groupId>
+      <artifactId>Project-A</artifactId>
+      <version>1.0</version>
+      <scope>compile</scope>
+      <exclusions>
+<!-- Add an <exclusions> element in the <dependency> element by which the problematic jar is included. -->
+        <exclusion>  <!-- declare the exclusion here -->
+          <groupId>sample.ProjectB</groupId>
+          <artifactId>Project-B</artifactId>
+        </exclusion>
+      </exclusions> 
+    </dependency>
+  </dependencies>
+</project>
+```
+
+**作用**
+
+```
+Project-A
+   -> Project-B
+        -> Project-D <! -- This dependency should be excluded -->
+              -> Project-E
+              -> Project-F
+   -> Project C
+```
+
+该图显示Project-A依赖于Project-B和C。Project-B依赖于Project-D。Project-D依赖于Project-E和F。默认情况下，Project A的类路径将包括：`B, C, D, E, F`
+
+如果您不希望将项目D及其依赖项添加到项目A的类路径中，因为存储库中缺少一些项目D的依赖项，并且您不需要项目B中依赖于项目D的功能。并且D在B的POM中也没有声明为`Optional`
+
+```xml
+
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>sample.ProjectA</groupId>
+  <artifactId>Project-A</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  ...
+  <dependencies>
+    <dependency>
+      <groupId>sample.ProjectB</groupId>
+      <artifactId>Project-B</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <groupId>sample.ProjectD</groupId> <!-- Exclude Project-D from Project-B -->
+          <artifactId>Project-D</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+</project>
+```
+
+如果您将Project-A部署到存储库，并且Project-X声明了对Project-A的正常依赖项，Project-D仍会被排除在类路径之外。
+
+```
+Project-X 
+		-> Project-A
+		-> Project-Y
+               -> Project-B
+                    -> Project-D
+                       ...
+```
+
+Project-Y也依赖于Project-B，它确实需要Project-D支持的功能。因此，它不会在其依赖列表中排除Project-D。它还可以提供一个额外的存储库，从中可以解析Project-E。在这种情况下，不会全局排除Project-D，因为它是Project-Y的合法依赖项。
+
+作为另一种情况，假设您不想要的依赖项是Project-E而不是Project-D。如何排除它？请参阅下图：
+
+```
+Project-A
+   -> Project-B
+        -> Project-D 
+              -> Project-E <!-- Exclude this dependency -->
+              -> Project-F
+   -> Project C
+```
+
+`Exclusions `适用于下方的整个依赖关系图。如果您想排除Project-E而不是Project-D，只需将排除更改为指向Project-E，但不会将排除向下移动到Project-D，因为您不能更改Project-D的POM。如果可以，您可以使用`Optional`而不是`Exclusions `，或将Project-D拆分为多个子项目，每个子项目只有正常依赖项。
+
+```xml
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>sample.ProjectA</groupId>
+  <artifactId>Project-A</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  ...
+  <dependencies>
+    <dependency>
+      <groupId>sample.ProjectB</groupId>
+      <artifactId>Project-B</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <groupId>sample.ProjectE</groupId> <!-- Exclude Project-E from Project-B -->
+          <artifactId>Project-E</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+</project>
+```
+
+
+
+
+
 ## Settings Reference
 
 ### Quick Overview
@@ -940,6 +1154,155 @@ A new feature - server password and passphrase encryption has been added to 2.1.
 
 ### Profiles
 
+settings.xml中的profile元素是pom.xml profile元素的缩减版本。它由`activation`, `repositories`, `pluginRepositories` and `properties`元素组成，其profile元素只包括这四个元素，因为它们与整个构建系统（这是setings.xml文件的作用）有关，而不是与单个项目对象模型设置有关。
+
+如果一个setting的profile从设置中处于活动状态，则其值将覆盖maven项目中的POM或profiles.xml文件中任何等效ID的profile。
+
+#### Activation
+
+Activation是profile的关键。与POM的profile一样，profile的强大功能来自于它仅在特定情况下修改某些值的能力；这些情况是通过Activation元素指定的。
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  ...
+  <profiles>
+    <profile>
+      <id>test</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <jdk>1.5</jdk>
+        <os>
+          <name>Windows XP</name>
+          <family>Windows</family>
+          <arch>x86</arch>
+          <version>5.1.2600</version>
+        </os>
+        <property>
+          <name>mavenVersion</name>
+          <value>2.0.3</value>
+        </property>
+        <file>
+          <exists>${basedir}/file2.properties</exists>
+          <missing>${basedir}/file1.properties</missing>
+        </file>
+      </activation>
+      ...
+    </profile>
+  </profiles>
+  ...
+</settings>
+```
+
+配置方法和`Build Profiles`一样
+
+
+
+#### Properties
+
+Maven属性是值占位符，就像Ant中的属性一样。它们的值可以使用符号`${X}`在POM中的任何位置访问，其中X是属性键。它们有五种不同的样式，都可以从settings.xml文件中访问：
+
+1. `env.X`: Prefixing a variable with “env.” will return the shell's environment variable. For example, `${env.PATH}` contains the $path environment variable (`%PATH%` in Windows).
+2. `project.x`: A dot (.) notated path in the POM will contain the corresponding element's value. For example: `<project><version>1.0</version></project>` is accessible via `${project.version}`.
+3. `settings.x`: A dot (.) notated path in the `settings.xml` will contain the corresponding element's value. For example: `<settings><offline>false</offline></settings>` is accessible via `${settings.offline}`.
+4. Java System Properties: All properties accessible via `java.lang.System.getProperties()` are available as POM properties, such as `${java.home}`.
+5. `x`: Set within a <properties /> element or an external files, the value may be used as `${someVar}`.
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  ...
+  <profiles>
+    <profile>
+      ...
+      <properties>
+          <!-- The property ${user.install} is accessible from a POM if this profile is active. -->
+        <user.install>${user.home}/our-project</user.install>
+      </properties>
+      ...
+    </profile>
+  </profiles>
+  ...
+</settings>
+```
+
+
+
+
+
+#### Repositories
+
+存储库是项目的远程集合，Maven使用这些项目来填充构建系统的本地存储库。Maven将其称为插件和依赖项。不同的远程存储库可能包含不同的项目，并且可以在活动配置文件下搜索它们以查找匹配的版本或快照工件。
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  ...
+  <profiles>
+    <profile>
+      ...
+      <repositories>
+        <repository>
+          <id>codehausSnapshots</id>
+          <name>Codehaus Snapshots</name>
+          <releases>
+            <enabled>false</enabled>
+            <updatePolicy>always</updatePolicy>
+            <checksumPolicy>warn</checksumPolicy>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+            <checksumPolicy>fail</checksumPolicy>
+          </snapshots>
+          <url>http://snapshots.maven.codehaus.org/maven2</url>
+          <layout>default</layout>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>myPluginRepo</id>
+          <name>My Plugins repo</name>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <url>https://maven-central-eu....com/maven2/</url>
+        </pluginRepository>
+      </pluginRepositories>
+      ...
+    </profile>
+  </profiles>
+  ...
+</settings>
+```
+
+- **releases**, **snapshots**: These are the policies for each type of artifact, Release or snapshot. With these two sets, a POM has the power to alter the policies for each type independent of the other within a single repository. For example, one may decide to enable only snapshot downloads, possibly for development purposes.
+- **enabled**: `true` or `false` for whether this repository is enabled for the respective type (`releases` or `snapshots`).
+- **updatePolicy**: This element specifies how often updates should attempt to occur. Maven will compare the local POM's timestamp (stored in a repository's maven-metadata file) to the remote. The choices are: `always`, `daily` (default), `interval:X` (where X is an integer in minutes) or `never`.
+- **checksumPolicy**: When Maven deploys files to the repository, it also deploys corresponding checksum files. Your options are to `ignore`, `fail`, or `warn` on missing or incorrect checksums.
+- **layout**: In the above description of repositories, it was mentioned that they all follow a common layout. This is mostly correct. Maven 2 has a default layout for its repositories; however, Maven 1.x had a different layout. Use this element to specify which if it is `default` or `legacy`.
+
+
+
+#### Plugin Repositories
+
+存储库是两种主要类型工程的所在地。第一种是用作其他工程依赖项的工程。这些是驻留在中心的大多数工程。另一种类型的工程是插件。Maven插件本身就是一种特殊类型的工程。正因为如此，插件存储库可能与其他存储库分离（尽管，我还没有听到令人信服的论据来这样做）。无论如何，pluginRepositories元素块的结构类似于repositories元素。pluginRepository元素每个都指定了Maven可以找到新插件的远程位置。
+
 
 
 ### Active Profiles
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  ...
+  <activeProfiles>
+    <activeProfile>env-test</activeProfile>
+  </activeProfiles>
+</settings>
+```
+
+setting.xml的最后一部分是activeProfiles元素。这包含一组activeProfile元素，每个元素都有一个配置文件ID的值。任何定义为activeProfile的配置文件ID都将处于活动状态，无论任何环境设置如何。如果没有找到匹配的配置文件，什么也不会发生。例如，如果env-test是activeProfile，则pom.xml（或带有相应ID的profile.xml）中的配置文件将处于活动状态。如果没有找到这样的配置文件，则执行将正常继续。
