@@ -21,7 +21,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- 使用 maven bom 管理依赖，减少版本号的冲突。-->
+            <!-- 使用 maven pom 管理依赖，减少版本号的冲突。-->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-bom</artifactId>
@@ -109,6 +109,10 @@
             </resource>
         </resources>
 
+        <pluginManagement>
+
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -124,4 +128,8 @@
             </plugin>
         </plugins>
     </build>
+
+    <reporting>
+
+    </reporting>
 </project>

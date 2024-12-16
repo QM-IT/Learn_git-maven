@@ -1228,8 +1228,6 @@ Maven属性是值占位符，就像Ant中的属性一样。它们的值可以使
 
 
 
-
-
 #### Repositories
 
 存储库是项目的远程集合，Maven使用这些项目来填充构建系统的本地存储库。Maven将其称为插件和依赖项。不同的远程存储库可能包含不同的项目，并且可以在活动配置文件下搜索它们以查找匹配的版本或快照工件。
@@ -1306,3 +1304,124 @@ Maven属性是值占位符，就像Ant中的属性一样。它们的值可以使
 ```
 
 setting.xml的最后一部分是activeProfiles元素。这包含一组activeProfile元素，每个元素都有一个配置文件ID的值。任何定义为activeProfile的配置文件ID都将处于活动状态，无论任何环境设置如何。如果没有找到匹配的配置文件，什么也不会发生。例如，如果env-test是activeProfile，则pom.xml（或带有相应ID的profile.xml）中的配置文件将处于活动状态。如果没有找到这样的配置文件，则执行将正常继续。
+
+
+
+## Use Config file And Env variable
+
+主要涉及以下几个成员：
+
+- `MAVEN_OPTS`
+- `MAVEN_ARGS`
+- `.mvn/extensions.xml`
+- `.mvn/maven.config`
+- `.mvn/jvm.config`
+
+使用说明参考：[configure.html](https://maven.apache.org/configure.html)
+
+
+
+## Introduction to Repositories
+
+### Artifact Repositories
+
+Maven中的存储库包含不同类型的构建工件和依赖项。
+
+有两种类型的存储库：本地(local)和远程(remote):
+
+1. 本地存储库是运行Maven的计算机上的一个目录。它缓存远程下载的Artifact和您尚未发布的临时构建工件
+2. 远程存储库是指通过各种协议（如file：//和https：//）访问的任何其他类型的存储库。这些存储库可能是由第三方设置的真正的远程存储库，用于提供其工件以供下载（例如，repo.maven.apache.org）。其他“远程”存储库可能是在公司内的文件或HTTP服务器上设置的内部存储库，用于在开发团队之间共享私有工件并用于发布。
+
+本地和远程存储库的结构相同，因此脚本可以在任何一侧运行，也可以同步以供离线使用。但是，存储库的布局设计对Maven用户完全透明。
+
+
+
+### Using Repositories
+
+一般来说，您不需要定期使用本地存储库做任何事情，除非在磁盘空间不足时将其清除（或者如果您愿意再次下载所有内容，则将其完全擦除）。
+
+对于远程存储库，它们用于下载和上传（如果您有权这样做）。
+
+#### Downloading from a Remote Repository
+
+Maven中的下载是由一个项目声明本地存储库中不存在的依赖项触发的（或者对于SNAPSHOT，当远程存储库包含更新的依赖项时）。默认情况下，Maven将从中央存储库下载。
+
+要覆盖它，您需要指定一个镜像，如[Using Mirrors for Repositories](https://maven.apache.org/guides/mini/guide-mirror-settings.html)中所示。您可以在`settings.xml`文件中将其设置为全局使用某个镜像。但是，项目通常在其pom.xml中自定义存储库([customise the repository in its](https://maven.apache.org/guides/mini/guide-multiple-repositories.html))，并且您的设置将优先。如果没有找到依赖项，请检查您是否没有覆盖远程存储库。
+
+#### Using Mirrors for the Central Repository
+
+在全球分布有几个的官方Central存储库。您可以更改`settings.xml`文件以使用一个或多个镜像。可以在[Using Mirrors for Repositories](https://maven.apache.org/guides/mini/guide-mirror-settings.html).指南中找到相关说明。
+
+
+
+### Building Offline
+
+如果您暂时与互联网断开连接并且需要离线构建项目，您可以使用命令行上的离线开关选型：
+
+```bash
+ mvn -o package
+```
+
+许多插件支持离线设置，并且不执行任何连接到Internet的操作。
+
+### Uploading to a Remote Repository
+
+虽然这对于任何类型的远程存储库都是可能的，但您必须有权这样做。要上传到Central Maven存储库，请参阅[Repository Center](https://maven.apache.org/repository/index.html)。
+
+### Internal Repositories
+
+​	当使用Maven时，尤其是在公司环境中，出于安全、速度或带宽原因，连接到Internet下载依赖项是不可接受的。因此，希望建立一个内部存储库来存放工件的副本，并将私有工件发布到里面。这样的内部存储库可以使用HTTP或文件系统（带有file：//URL）下载，并使用SCP、FTP或文件复制上传。
+
+​	就Maven而言，这个存储库没有什么特别之处：它是另一个远程存储库，其中包含要下载到用户本地缓存的artifact，并且是工件发布(artifact releases)的发布目的地。
+
+此外，您可能希望与生成的项目站点共享存储库服务器。有关创建和部署站点的更多信息，请参阅 [Creating a Site](https://maven.apache.org/guides/mini/guide-site.html)。
+
+### Setting up the Internal Repository
+
+​	要设置内部存储库，只需要您有一个放置它的地方，然后使用与远程存储库（如repo.maven.apache.org）相同的设计将所需的工件复制到那里。不建议您抓取或同步`Central`的完整副本，因为那里有大量数据，这样做会使您操作被阻塞。您可以使用[Repository Management](https://maven.apache.org/repository-management.html) 页面上描述的程序来运行内部存储库的服务器，根据需要从Internet下载，然后将工件保存在内部存储库中，以便以后更快地下载。
+
+​	其他的办法是手动下载和审查版本，然后将它们复制到内部存储库，或者让Maven为用户下载它们，然后手动将审查过的工件上传到用于发布的内部存储库。此步骤是利用许可证(`license `)禁止自动分发工件的唯一操作办法，例如Sun提供的几个J2EE JAR。有关更多信息，请参阅处理SUN JAR文档指南。
+
+
+
+### Using the Internal Repository
+
+使用内部存储库非常简单。只需进行更改以添加`repositories`元素：
+
+```xml
+<project>
+  ...
+  <repositories>
+    <repository>
+      <id>my-internal-site</id>
+      <url>https://myserver/repo</url>
+    </repository>
+  </repositories>
+  ...
+</project>
+```
+
+如果您的内部存储库需要身份验证，则可以在您的 [settings](https://maven.apache.org/settings.html#Servers)文件中使用id元素来指定登录信息。
+
+### Deploying to the Internal Repository
+
+拥有一个或多个内部存储库的最重要原因之一是能够发布您自己的私有版本。
+
+要发布到存储库，您需要通过SCP、SFTP、FTP、WebDAV或文件系统之一进行访问。连接是通过各种 [wagons](https://maven.apache.org/wagon/wagon-providers/index.html)(传输载体)完成的。一些`wagons `可能需要作为扩展添加到您的构建中。
+
+
+
+## Respositories
+
+### Install to Local
+
+参考：[guide-3rd-party-jars-local](https://maven.apache.org/guides/mini/guide-3rd-party-jars-local.html)
+
+### Deploy to Remote
+
+参考：[guide-3rd-party-jars-remote](https://maven.apache.org/guides/mini/guide-3rd-party-jars-remote.html)
+
+- Guide to deploying 3rd party JARs to remote repository
+- Deploying a 3rd party JAR with a generic POM
+- Deploying a 3rd party JAR with a customized POM
+- Deploying Source Jars
