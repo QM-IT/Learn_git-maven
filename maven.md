@@ -1425,3 +1425,214 @@ Maven中的下载是由一个项目声明本地存储库中不存在的依赖项
 - Deploying a 3rd party JAR with a generic POM
 - Deploying a 3rd party JAR with a customized POM
 - Deploying Source Jars
+
+
+
+### Setting up Multiple Repositories
+
+您可以通过两种不同的方式指定多个存储库的使用。第一种方法是在POM中指定您要使用的存储库。profile元素内部和外部都支持这一点：
+
+```xml
+<project>
+...
+  <repositories>
+    <repository>
+      <id>my-repo1</id>
+      <name>your custom repo</name>
+      <url>http://jarsm2.dyndns.dk</url>
+    </repository>
+    <repository>
+      <id>my-repo2</id>
+      <name>your custom repo</name>
+      <url>http://jarsm2.dyndns.dk</url>
+    </repository>
+  </repositories>
+...
+</project>
+--------------
+<profiles>
+    <profile>
+        <id>test</id>
+        <repositories>
+            ...
+        </repositories>
+    </profile>
+</profiles>
+```
+
+注意：项目默认将获得 [Super POM](https://maven.apache.org/guides/introduction/introduction-to-the-pom.html#Super_POM)中定义的标准存储库集。
+
+您可以指定多个存储库的另一种方法是在`${user.home}/.m2/settings.xml`或`${maven.home}/conf/settings.xml`文件中创建一个profile元素，如下所示：
+
+```xml
+
+<settings>
+ ...
+ <profiles>
+   ...
+   <profile>
+     <id>myprofile</id>
+     <repositories>
+       <repository>
+         <id>my-repo2</id>
+         <name>your custom repo</name>
+         <url>http://jarsm2.dyndns.dk</url>
+       </repository>
+     </repositories>
+   </profile>
+   ...
+ </profiles>
+ <activeProfiles>
+   <activeProfile>myprofile</activeProfile>
+ </activeProfiles>
+ ...
+</settings>
+```
+
+如果您在profile元素中指定存储库，您必须记得激活该特定配置文件！正如您在上面看到的，我们通过在`activeProfiles`元素中注册一个`profile ID`来执行此操作。
+
+您还可以在命令上激活此配置文件，例如通过执行以下命令：
+
+```bash
+mvn -Pmyprofile ...
+```
+
+事实上，如果您希望同时激活多个配置文件，-P选项跟随要激活的`profile id`的CSV列表。
+
+
+
+#### Repository Order
+
+按以下顺序查询远程存储库URL以获取`artifact`，直到返回有效结果：
+
+1. effective settings:
+   1. Global `settings.xml`
+   2. User `settings.xml`
+2. local effective build POM:
+   1. Local `pom.xml`
+   2. Parent POMs, recursively
+   3. Super POM
+3. effective POMs from dependency path to the artifact.
+
+对于这些位置中的每一个，首先按照[Introduction to build profiles](https://maven.apache.org/guides/introduction/introduction-to-profiles.html)中概述的顺序查询配置文件中的存储库。
+
+在从存储库下载之前，会应用镜像配置([mirrors configuration](https://maven.apache.org/guides/mini/guide-mirror-settings.html))。
+
+对于`Effective settings and local build POM`（所包含的profile配置数据会被考虑在内），使用`mvn help:effective-settings`和`mvn help:effective-pom -Dverbose`，可以很容易地查看它们的存储库优先顺序。
+
+
+
+#### Repository IDs
+
+每个存储库必须有唯一的ID。有效`settings.xml`文件或有效POM文件中的`repository ID`冲突会导致构建失败。但是，POM中的`repository`会被有效的`settings.xml`中具有相同ID的`repository`覆盖。
+
+
+
+### Guide to Large Scale Centralized Deployments
+
+参考：[guide-large-scale-centralized-deployments.html](https://maven.apache.org/guides/mini/guide-large-scale-centralized-deployments.html)
+
+
+
+### Using Mirrors for Repositories
+
+使用存储库，您可以指定要从哪些位置下载某些工件，例如依赖项和maven-plugins。存储库可以在项目中声明，这意味着如果您有自己的自定义存储库，共享项目的人可以轻松获得开箱即用的正确设置。但是，您可能希望为特定存储库使用替代镜像，而不更改项目文件。
+
+使用镜像的一些原因是：
+
+- There is a synchronized mirror on the internet that is geographically closer and faster
+- You want to replace a particular repository with your own internal repository which you have greater control over
+- You want to run a [repository manager](https://maven.apache.org/repository-management.html) to provide a local cache to a mirror and need to use its URL instead
+
+要配置给定存储库的镜像，您可以在设置文件（${user. home}/.m2/settings.xml）中提供它，为新存储库提供自己的id和url，并指定`mirrorOf`元素，即要使用镜像的存储库的ID。例如，默认包含的主Maven Central存储库的ID是`central`，因此要使用不同的镜像实例，您可以配置以下内容：
+
+```xml
+<settings>
+  ...
+  <mirrors>
+    <mirror>
+      <id>other-mirror</id>
+      <name>Other Mirror Repository</name>
+      <url>https://other-mirror.repo.other-company.com/maven2</url>
+      <mirrorOf>central</mirrorOf>
+    </mirror>
+  </mirrors>
+  ...
+</settings>
+```
+
+请注意，给定存储库最多只能有一个镜像。换句话说，不能将单个存储库映射到一组镜像，这些镜像都定义了相同的`<mirrorOf>`值。Maven不会聚合镜像，而是简单地选择第一个匹配项。如果您想提供多个存储库的组合视图，请改用 [repository manager](https://maven.apache.org/repository-management.html) 。
+
+
+
+#### Using A Single Repository
+
+您可以通过让Maven镜像映射所有存储库请求来强制Maven使用单个存储库。存储库必须包含所有所需的工件，或者能够将请求代理到其他存储库。当使用带有Maven存储库管理器的内部公司存储库来代理外部请求时，此设置非常有用。
+
+为此，请将`mirrorOf`设置为`*`：
+
+**Note:** This feature is only available in Maven 2.0.5+.
+
+```xml
+<settings>
+  ...
+  <mirrors>
+    <mirror>
+      <id>internal-repository</id>
+      <name>Maven Repository Manager running on repo.mycompany.com</name>
+      <url>http://repo.mycompany.com/proxy</url>
+      <mirrorOf>*</mirrorOf>
+    </mirror>
+  </mirrors>
+  ...
+</settings>
+```
+
+
+
+#### Advanced Mirror Specification
+
+一个镜像可以处理多个存储库。这通常与存储库管理器结合使用，可以轻松集中配置后面的存储库列表。
+
+语法:
+
+- `*` matches all repo ids.
+- `external:*` matches all repositories except those using localhost or file based repositories. This is used when you want to exclude redirecting repositories that are defined for Integration Testing.
+- since Maven 3.8.0, `external:http:*` matches all repositories using HTTP except those using localhost.
+- multiple repositories may be specified using a comma as the delimiter
+- an exclamation mark may be used in conjunction with one of the above wildcards to exclude a repository id
+
+注意不要在逗号分隔的列表中包含标识符或通配符周围的额外空格。例如，将`<mirrorOf>`设置为`!repo1, *`不会镜像任何内容，而`！repo1,*`将镜像除repo1之外的所有内容。
+
+通配符在以逗号分隔的存储库标识符列表中的位置并不重要，因为通配符会进一步处理，并且显式包含或排除停止处理，从而覆盖任何通配符匹配。
+
+当您使用高级语法并配置多个镜像时，声明顺序很重要。当Maven查找某个存储库的镜像时，它首先检查其`<mirrorOf>`与存储库标识符完全匹配的镜像。如果没有找到直接匹配，Maven会根据上述规则（如果存在）选择第一个匹配的镜像声明。因此，您可以通过更改`settings.xml`中定义的顺序来影响匹配顺序
+
+Examples:
+
+- `*` = everything
+- `external:*` = everything not on the localhost and not file based.
+- `repo,repo1` = repo or repo1
+- `*,!repo1` = everything except repo1
+
+```xml
+<settings>
+  ...
+  <mirrors>
+    <mirror>
+      <id>internal-repository</id>
+      <name>Maven Repository Manager running on repo.mycompany.com</name>
+      <url>http://repo.mycompany.com/proxy</url>
+      <mirrorOf>external:*,!foo</mirrorOf>
+    </mirror>
+    <mirror>
+      <id>foo-repository</id>
+      <name>Foo</name>
+      <url>http://repo.mycompany.com/foo</url>
+      <mirrorOf>foo</mirrorOf>
+    </mirror>
+  </mirrors>
+  ...
+</settings>
+```
+

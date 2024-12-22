@@ -113,6 +113,8 @@
 
         </pluginManagement>
 
+
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -128,6 +130,23 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>test</id>
+            <repositories>
+
+            </repositories>
+        </profile>
+    </profiles>
+
+    <repositories>
+
+    </repositories>
+
+    <distributionManagement>
+
+    </distributionManagement>
 
     <reporting>
 
