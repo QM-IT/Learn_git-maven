@@ -183,7 +183,7 @@ directory structure:
 
 如果您有几个Maven项目，并且它们都有相似的配置，您可以通过提取这些相似的配置并创建父项目来重构您的项目。因此，您所要做的就是让您的Maven项目继承该父项目，然后这些配置将应用于所有这些项目。
 
-如果你有一组一起构建或处理的项目，您可以创建一个父项目，并让该父项目将这些项目声明为其模块。通过这样做，您只需要构建父项目，其余的就会随之而来。
+如果你有一组一起构建或处理的项目，您可以创建一个父项目，并让该父项目将这些项目声明为其模块。通过这样做，您只需要执行构建父项目，其余的就会随之而来。
 
 但是当然，您可以同时拥有项目继承和项目聚合。这意味着，您可以让您的模块指定一个父项目，同时，让该父项目指定那些Maven项目作为其模块。您只需要应用所有三个规则：
 
@@ -812,6 +812,38 @@ Maven通过自动包含依赖传递特性来避免发现和指定您自己的依
 
 
 
+### Dependency Scope
+
+依赖项范围用于限制依赖项的可传递性并确定依赖项何时包含在类路径中。
+
+有6个范围：
+
+- **compile**
+  This is the default scope, used if none is specified. Compile dependencies are available in all classpaths of a project. Furthermore, those dependencies are propagated to dependent projects.
+- **provided**
+  This is much like `compile`, but indicates you expect the JDK or a container to provide the dependency at runtime. For example, when building a web application for the Java Enterprise Edition, you would set the dependency on the Servlet API and related Java EE APIs to scope `provided` because the web container provides those classes. A dependency with this scope is added to the classpath used for compilation and test, but not the runtime classpath. It is not transitive.
+- **runtime**
+  This scope indicates that the dependency is not required for compilation, but is for execution. Maven includes a dependency with this scope in the runtime and test classpaths, but not the compile classpath.
+- **test**
+  This scope indicates that the dependency is not required for normal use of the application, and is only available for the test compilation and execution phases. This scope is not transitive. Typically this scope is used for test libraries such as JUnit and Mockito. It is also used for non-test libraries such as Apache Commons IO if those libraries are used in unit tests (src/test/java) but not in the model code (src/main/java).
+- **system**
+  This scope is similar to `provided` except that you have to provide the JAR which contains it explicitly. The artifact is always available and is not looked up in a repository.
+- **import**
+  This scope is only supported on a dependency of type `pom` in the `<dependencyManagement>` section. It indicates the dependency is to be replaced with the effective list of dependencies in the specified POM's `<dependencyManagement>` section. Since they are replaced, dependencies with a scope of `import` do not actually participate in limiting the transitivity of a dependency.
+
+每个作用域（`import`除外）都以不同的方式影响传递依赖关系，如下表所示。如果将依赖关系设置为左列中的作用域，则该依赖关系的传递依赖关系与顶部行中的作用域会决定主项目中的依赖关系，其最终作用域列在交集中。如果未列出作用域，则意味着该依赖关系被省略。
+
+|          | compile    | provided | runtime  | test |
+| -------- | ---------- | -------- | -------- | ---- |
+| compile  | compile(*) | -        | runtime  | -    |
+| provided | provided   | -        | provided | -    |
+| runtime  | runtime    | -        | runtime  | -    |
+| test     | test       | -        | test     | -    |
+
+**(\*) Note:** it is intended that this should be runtime scope instead, so that all compile dependencies must be explicitly listed. However, if a library you depend on extends a class from another library, both must be available at compile time. For this reason, compile time dependencies remain as compile scope even when they are transitive.
+
+
+
 ### Dependency Management
 
 maven的核心功能，请通过案例说明来理解，参考：[introduction-to-dependency-mechanism.html](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html)。
@@ -820,7 +852,7 @@ maven的核心功能，请通过案例说明来理解，参考：[introduction-t
 
 #### Optional
 
-不会出于（无论出于什么原因）将项目拆分为子模块的目的，而使用`Optional`。一般是，一些依赖项仅用于项目中的某些功能，如果不使用该功能，就不需要了。理想情况下，这样的功能将被拆分为依赖于核心功能项目的子模块。如果需要它们时，子项目将只有非可选依赖项，因为如要使用到子项目的功能。但是，由于项目不能被拆分（同样，无论出于什么原因），这些依赖项被声明为`Optional`。如果用户想要使用与可选依赖项相关的功能，他们必须在自己的项目中重新声明该可选依赖项。这不是处理这种情况的最明确的方法，但是可选依赖项和依赖项排除都是权宜之计。
+不会出于（无论出于什么原因）将项目拆分为子模块的目的，而使用`Optional`。一般是，一些依赖项仅用于项目中的某些功能，如果不使用该功能，就不需要了。理想情况下，这样的功能将被拆分为依赖于核心功能项目的子模块。如果需要它们时，子项目将是必选依赖项，因为如要使用到子项目的功能。但是，由于项目不能被拆分（同样，无论出于什么原因），这些依赖项被声明为`Optional`。如果用户想要使用与可选依赖项相关的功能，他们必须在自己的项目中重新声明该可选依赖项。
 
 可选依赖项可以节省空间和内存。它们防止违反许可协议的或导致类路径问题的jar被捆绑到`war、ear、fat jar`等类型的包中。
 
@@ -1635,4 +1667,96 @@ Examples:
   ...
 </settings>
 ```
+
+
+
+## Best Practice
+
+### Creating Assemblies
+
+`maven-assembly-plugin`主要用于创建可运行的maven项目jar包，包含所有用到的依赖(`maven-jar-plugin`只会打包项目代码)。
+
+#### Guide to creating assemblies
+
+Maven中的**assembly**机制提供了一种简单方法，使用POM中的assembly描述符和依赖信息创建工程发布版本。为了使用assembly插件，您需要在POM中配置assembly插件，它可能如下所示：
+
+```xml
+<project>
+  <parent>
+    <artifactId>maven</artifactId>
+    <groupId>org.apache.maven</groupId>
+    <version>2.0-beta-3-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.maven</groupId>
+  <artifactId>maven-embedder</artifactId>
+  <name>Maven Embedder</name>
+  <version>2.0-beta-3-SNAPSHOT</version>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.3.0</version>
+        <configuration>
+          <descriptors>
+            <descriptor>src/assembly/dep.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>create-archive</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  ...
+</project>
+```
+
+您会注意到assembly描述符位于`${project.basedir}/src/Assembly`中，这是assembly描述符的标准位置。
+
+#### Creating a binary assembly
+
+这是assembly插件的最典型用法，您可以在其中创建一般用途的发行版。
+
+```xml
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+  <id>bin</id>
+  <formats>
+    <format>tar.gz</format>
+    <format>tar.bz2</format>
+    <format>zip</format>
+  </formats>
+  <fileSets>
+    <fileSet>
+      <directory>${project.basedir}</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>README*</include>
+        <include>LICENSE*</include>
+        <include>NOTICE*</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>*.jar</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}/site</directory>
+      <outputDirectory>docs</outputDirectory>
+    </fileSet>
+  </fileSets>
+</assembly>
+```
+
+您可以使用前面提到的手动定义的assembly 描述符，但在这种情况下使用[预定义的assembly描述符][https://maven.apache.org/plugins/maven-assembly-plugin/descriptor-refs.html#bin]更简单。如何使用这种预定义的assembly描述符在[documentation of maven-assembly-plugin](https://maven.apache.org/plugins/maven-assembly-plugin/usage.html#Configuration)中有说明。
 

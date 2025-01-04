@@ -37,7 +37,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-         <!-- knife4j-openapi3, 已经包含了springdoc-openapi依赖 -->
+        <!-- knife4j-openapi3, 已经包含了springdoc-openapi依赖 -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
@@ -52,6 +52,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         <!-- mybatis-plus核心依赖 -->
         <dependency>
@@ -90,17 +94,13 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
-<!--        <filters>-->
-<!--            &lt;!&ndash; 过滤指定properties文件（K=V形式）的文件夹，读取为Map形式 &ndash;&gt;-->
-<!--            <filter>src/main/resources/propertyConfig/common.properties</filter>-->
-<!--        </filters>-->
+        <!--        <filters>-->
+        <!--            &lt;!&ndash; 过滤指定properties文件（K=V形式）的文件夹，读取为Map形式 &ndash;&gt;-->
+        <!--            <filter>src/main/resources/propertyConfig/common.properties</filter>-->
+        <!--        </filters>-->
         <resources>
             <!-- 资源标识，可以使用${上面定义的k或Maven内部已经存在的}的占位符来表示特定值 -->
             <resource>
@@ -112,7 +112,6 @@
         <pluginManagement>
 
         </pluginManagement>
-
 
 
         <plugins>

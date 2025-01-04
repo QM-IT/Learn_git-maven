@@ -15,7 +15,11 @@ spring:
           url: jdbc:mysql://192.168.100.101:3306/powerjob_product
           username: qm
           password: wangqiming
-
-
+  mail:
+    protocol: smtp
+    properties:
+      mail:
+        ssl:
+          enable: true
 mybatis-plus:
   type-aliases-package: com.qiming.pojo
