@@ -1758,5 +1758,5 @@ Maven中的**assembly**机制提供了一种简单方法，使用POM中的assemb
 </assembly>
 ```
 
-您可以使用前面提到的手动定义的assembly 描述符，但在这种情况下使用[预定义的assembly描述符][https://maven.apache.org/plugins/maven-assembly-plugin/descriptor-refs.html#bin]更简单。如何使用这种预定义的assembly描述符在[documentation of maven-assembly-plugin](https://maven.apache.org/plugins/maven-assembly-plugin/usage.html#Configuration)中有说明。
+您可以使用前面提到的手动定义的assembly 描述符，但在这种情况下使用[预定义的assembly描述符](https://maven.apache.org/plugins/maven-assembly-plugin/descriptor-refs.html#bin)更简单。如何使用这种预定义的assembly描述符在[documentation of maven-assembly-plugin](https://maven.apache.org/plugins/maven-assembly-plugin/usage.html#Configuration)中有说明。
 
